@@ -20,3 +20,5 @@ Tech Stack:
 Run project:
 
 streamlit run app.py
+Live Demo:
+https://ai-resume-analyzer-csxsxqdvnbhq8tjc84a3ug.streamlit.app/
