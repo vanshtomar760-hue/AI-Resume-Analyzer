@@ -1,11 +1,49 @@
 import streamlit as st
 import pdfplumber
+import matplotlib.pyplot as plt
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-st.title("AI Resume Analyzer")
+st.markdown("""
+<div style="
+padding:20px;
+border-radius:15px;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
+text-align:center;
+margin-bottom:20px;
+">
+<h1 style="color:white;">
+🤖 AI Resume Analyzer
+</h1>
+<p style="color:white;">
+Analyze resumes, ATS score & skill gaps instantly
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+
+.stButton > button {
+    background: linear-gradient(90deg,#00c6ff,#0072ff);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.stButton > button:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 0px 15px rgba(0,114,255,0.6);
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 job_description = st.text_area(
     "Paste Job Description Here"
@@ -30,8 +68,13 @@ uploaded_file = st.file_uploader(
     type=["pdf"]
 )
 
-analyze = st.button("Analyze Resume")
-reset = st.button("Reset")
+col1, col2 = st.columns(2)
+
+with col1:
+    analyze = st.button("Analyze Resume")
+
+with col2:
+    reset = st.button("Reset")
 
 
 def extract_text(pdf_file):
@@ -163,19 +206,18 @@ if uploaded_file and analyze:
         resume_text
     )
 
-    st.subheader(
-        "Skills Found"
-    )
+    st.subheader("🛠 Skills Found")
 
-    st.success(
-        skills_found
-    )
+    cols = st.columns(4)
+
+    for i, skill in enumerate(skills_found):
+
+        cols[i % 4].success(skill.title())
 
     st.metric(
-        "Total Skills Found",
-        len(skills_found)
-    )
-
+    "Total Skills Found",
+    len(skills_found)
+)
 
     st.subheader(
         "Resume Details"
@@ -194,14 +236,6 @@ if uploaded_file and analyze:
 
         st.info(item)
 
-
-    st.write("Work Experience")
-
-    for item in parsed["Experience"]:
-
-        st.info(item)
-
-
     if job_description:
 
         score = calculate_score(
@@ -213,11 +247,23 @@ if uploaded_file and analyze:
             "ATS Match Score"
         )
 
-        st.metric(
-            "Score",
-            f"{score}%"
-        )
+        if score < 30:
 
+         st.error(
+        f"🔴 ATS Score: {score}%"
+    )
+
+        elif score < 50:
+
+         st.warning(
+        f"🟡 ATS Score: {score}%"
+    )
+
+        else:
+
+         st.success(
+        f"🟢 ATS Score: {score}%"
+    )
         st.progress(
             int(score)
         )
@@ -238,15 +284,15 @@ if uploaded_file and analyze:
                 )
 
 
-        st.subheader(
-            "Missing Skills"
-        )
+                st.subheader("⚠ Missing Skills")
 
         if missing_skills:
 
-            st.error(
-                missing_skills
-            )
+            for skill in missing_skills:
+
+                st.error(
+                    f"❌ {skill.title()}"
+                )
 
         else:
 
@@ -254,30 +300,75 @@ if uploaded_file and analyze:
                 "No important skills missing"
             )
 
+        st.subheader("📈 Skills Analysis")
 
-        st.subheader(
-            "Suggestions"
+        matched = len(skills_found) - len(missing_skills)
+
+        labels = [
+            "Matched",
+            "Missing"
+        ]
+
+        sizes = [
+            matched,
+            len(missing_skills)
+        ]
+
+        fig, ax = plt.subplots()
+
+        ax.pie(
+            sizes,
+            labels=labels,
+            autopct="%1.1f%%"
         )
 
-        if score < 50:
+        ax.axis("equal")
 
-            st.warning(
-                "Add more relevant skills and projects."
-            )
+        st.pyplot(fig)
 
-        elif score < 75:
+        st.subheader("💡 Suggestions")
 
-            st.info(
-                "Resume moderately matches the job."
-            )
+    if missing_skills:
 
-        else:
+        for skill in missing_skills:
 
-            st.success(
-                "Strong resume match!"
-            )
+         st.info(
+            f"Consider adding {skill.title()} if you have worked with it."
+        )
+
+    if score < 50:
+
+        st.warning(
+        "Your resume has a low match with this job description."
+    )
+
+    elif score < 75:
+
+        st.info(
+        "Your resume partially matches the job requirements."
+    )
+
+    else:
+
+        st.success(
+        "Your resume strongly matches the job requirements."
+    )
 
 
+st.markdown("---")
+
+st.markdown(
+    """
+    <div style="
+    text-align:center;
+    color:gray;
+    ">
+    Built by Vansh Tomar |
+    Python • Streamlit • NLP
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 if reset:
 
     st.rerun()
